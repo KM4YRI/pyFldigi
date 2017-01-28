@@ -1,5 +1,7 @@
 # pyFldigi
 
+[![Build Status](https://travis-ci.org/KM4YRI/pyFldigi.svg?branch=master)](https://travis-ci.org/KM4YRI/pyFldigi)
+
 ## Summary / Context
 
 pyFldigi is a small Python library that can control the Fldigi application via XML-RPC.  
