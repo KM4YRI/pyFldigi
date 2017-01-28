@@ -15,12 +15,12 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='pyfldigi',
-      version='0.1',
+      version='0.2',
       description='Python library to control FLDIGI via XML-RPC',
       long_description=long_description,
       url='https://github.com/KM4YRI/pyFldigi',
       author='KM4YRI',
-      author_email='km4yri',
+      author_email='km4yri@gmail.com',
       license='License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
       classifiers=[  # https://pypi.python.org/pypi?%3Aaction=list_classifiers
                    'Development Status :: 3 - Alpha',
@@ -42,6 +42,6 @@ setup(name='pyfldigi',
                    'Programming Language :: Python :: 3.6',
                    'Topic :: Communications :: Ham Radio'],
       keywords='fldigi ham radio hf digital cw morse rtty olivia psk ssb sdr',
-      packages=['pyfldigi'],
+      packages=['pyfldigi', 'tests'],
       install_requires=[],
       zip_safe=False)
