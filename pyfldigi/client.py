@@ -4,20 +4,20 @@ import time
 import xmlrpc.client
 
 
-class FldigiClient(object):
+class Client(object):
 
     def __init__(self, ip_address='127.0.0.1', port=7362):
         self.ip_address = ip_address
         self.port = port
         self.client = xmlrpc.client.ServerProxy('http://{}:{}/'.format(ip_address, port))
-        self.modem = FldigiClient.Modem(self.client)
-        self.main = FldigiClient.Main(self.client)
-        self.rig = FldigiClient.Rig(self.client)
-        # self.log = FldigiClient.Log(self.client)
-        self.rx = FldigiClient.Rx(self.client)
-        self.tx = FldigiClient.Tx(self.client)
-        self.spotter = FldigiClient.Spot(self.client)
-        self.flmsg = FldigiClient.Flmsg(self.client)
+        self.modem = Client.Modem(self.client)
+        self.main = Client.Main(self.client)
+        self.rig = Client.Rig(self.client)
+        # self.log = Client.Log(self.client)
+        self.rx = Client.Rx(self.client)
+        self.tx = Client.Tx(self.client)
+        self.spotter = Client.Spot(self.client)
+        self.flmsg = Client.Flmsg(self.client)
 
     @property
     def methods(self):
@@ -54,9 +54,9 @@ class FldigiClient(object):
 
         def __init__(self, client):
             self.client = client
-            self.olivia = FldigiClient.Olivia(client)
-            self.wefax = FldigiClient.Wefax(client)
-            self.navtex = FldigiClient.Navtex(client)
+            self.olivia = Client.Olivia(client)
+            self.wefax = Client.Wefax(client)
+            self.navtex = Client.Navtex(client)
 
         @property
         def name(self):
@@ -695,22 +695,3 @@ class FldigiClient(object):
         def enable_arq(self):
             '''Switch to ARQ I/O'''
             self.client.io.enable_arq()
-
-
-
-
-class ApplicationMonitor(object):
-
-    def __init__(self):
-        pass
-
-    def launch(self):
-        pass
-
-    def get_pid(self):
-        '''Get the process ID from the operating system'''
-        pass
-
-
-client = FldigiClient()
-print(client.tx.send('Hello KM4YRI'))
