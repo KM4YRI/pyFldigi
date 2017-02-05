@@ -15,7 +15,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='pyfldigi',
-      version='0.2',
+      version='0.3',
       description='Python library to control FLDIGI via XML-RPC',
       long_description=long_description,
       url='https://github.com/KM4YRI/pyFldigi',
