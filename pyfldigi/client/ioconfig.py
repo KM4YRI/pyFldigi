@@ -1,4 +1,4 @@
-'''
+'''ARQ/KISS I/O port
 '''
 
 

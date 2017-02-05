@@ -5,7 +5,8 @@ http://www.w1hkj.com/FldigiHelp-3.21/html/psk_reporter_page.html
 
 class Spot(object):
 
-    '''
+    '''PSK Reporter spotter.
+    All the commands under 'fldigi.spot' in the XML-RPC spec for fldigi.
     '''
 
     def __init__(self, client):
@@ -14,6 +15,16 @@ class Spot(object):
     @property
     def auto(self):
         '''spot.get_auto   b:n Returns the autospotter state
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.spot.auto
+        True
+        >>> fldigi.spot.auto = False
+        >>> fldigi.spot.auto
+        False
         '''
         return self.client.spot.get_auto()
 

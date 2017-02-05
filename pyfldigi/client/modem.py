@@ -126,8 +126,9 @@ class Modem(object):
     def carrier(self):
         '''The modem carrier frequency, in Hz.
 
-        .. note:: This is NOT the same as the rig carrier frequency which is usually in the kHz or MHz range.
-        The modem carrier frequency is usually ~1000 Hz or so, well within the audio range.
+        .. note::
+            This is NOT the same as the rig carrier frequency which is usually in the kHz or MHz range.
+            The modem carrier frequency is usually ~1000 Hz or so, well within the audio range.
 
         :getter: Returns the modem carrier frequency
         :setter: Sets modem carrier.
@@ -148,7 +149,9 @@ class Modem(object):
     @carrier.setter
     def carrier(self, freq):
         '''Sets modem carrier.
-        NOTE: sphinx ignores docstrings from setters, the documentation is above under the @property'''
+
+        NOTE: sphinx ignores docstrings from setters, the documentation is above under the @property
+        '''
         self.client.modem.set_carrier(int(freq))
 
     def increment_carrier(self, inc):
@@ -189,7 +192,20 @@ class Modem(object):
 
     @property
     def bandwidth(self):
-        '''Returns the modem bandwidth
+        '''The modem bandwidth.
+
+        :getter: Returns the modem bandwidth
+        :setter: Sets the modem bandwidth.
+        :type: int
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.bandwidth
+        0
+        >>> fldigi.modem.bandwidth = 500
+        0
         '''
         return self.client.modem.get_bandwidth()
 
@@ -201,24 +217,60 @@ class Modem(object):
 
     def increment_bandwidth(self, inc):
         '''Increments the modem bandwidth. Returns the new value
+
+        :param inc: The amount to increment, in Hz.
+        :type inc: int
+        :returns: The new bandwidth
+        :rtype: int
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.bandwidth
+        1000
+        >>> fldigi.modem.increment_bandwidth(20)
+        1020
         '''
         return self.client.modem.inc_bandwidth(int(inc))
 
     @property
     def quality(self):
         '''Returns the modem signal quality in the range [0:100]
+
+        :getter: Returns the modem bandwidth
+        :type: int
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.quality
+        0
         '''
         return self.client.modem.get_quality()
 
     def search_up(self):
         '''Searches upward in frequency
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.search_up()
         '''
-        return self.client.modem.search_up()
+        self.client.modem.search_up()
 
     def search_down(self):
         '''Searches downward in frequency
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.search_up()
         '''
-        return self.client.modem.search_down()
+        self.client.modem.search_down()
 
 
 class Olivia(object):
@@ -229,6 +281,18 @@ class Olivia(object):
     @property
     def bandwidth(self):
         '''Returns the Olivia bandwidth
+
+        :getter: Returns the modem bandwidth
+        :setter: Sets the modem bandwidth.
+        :type: int
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.modem.name = 'Olivia-4-250'
+        >>> fldigi.modem.olivia.bandwidth
+        500
         '''
         return self.client.modem.olivia.get_bandwidth()
 
@@ -240,7 +304,31 @@ class Olivia(object):
 
     @property
     def tones(self):
-        '''modem.olivia.get_tones  i:n Returns the Olivia tones
+        '''The # of Olivia tones.  Note that Olivia is a configurable mode where
+
+        :getter: Returns the modem bandwidth
+        :setter: Sets the modem bandwidth.
+        :type: int
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+
+        # Changing the modem name has an effect on the # of tones.
+        >>> fldigi.modem.name = 'Olivia-4-250'
+        >>> fldigi.modem.tones
+        4
+        >>> fldigi.modem.name = 'Olivia-8-250'
+        >>> fldigi.modem.tones
+        8
+        # Setting the # of tones will have an effect on the name.
+        >>> fldigi.modem.olivia.tones = 4
+        >>> fldigi.modem.name
+        'Olivia-4-250'
+        >>> fldigi.modem.olivia.tones = 8
+        >>> fldigi.modem.name
+        'Olivia-4-250'
         '''
         return self.client.modem.olivia.get_tones()
 
@@ -267,32 +355,32 @@ class Wefax(object):
         return self.client.wefax.skip_apt()
 
     def skip_phasing(self):
-        '''wefax.skip_phasing              : s:n   : Skip phasing during Wefax reception
+        '''Skip phasing during Wefax reception
         '''
         return self.client.wefax.skip_phasing()
 
     def set_tx_abort_flag(self):
-        '''wefax.set_tx_abort_flag         : s:n   : Cancels Wefax image transmission
+        '''Cancels Wefax image transmission
         '''
         return self.client.wefax.set_tx_abort_flag()
 
     def end_reception(self):
-        '''wefax.end_reception             : s:n   : End Wefax image reception
+        '''End Wefax image reception
         '''
         return self.client.wefax.end_reception()
 
     def start_manual_reception(self):
-        '''wefax.start_manual_reception    : s:n   : Starts fax image reception in manual mode
+        '''Starts fax image reception in manual mode
         '''
         return self.client.wefax.start_manual_reception()
 
     def set_adif_log(self, logging):
-        '''wefax.set_adif_log              : s:b   : Set/reset logging to received/transmit images to ADIF log file
+        '''Set/reset logging to received/transmit images to ADIF log file
         '''
         return self.client.wefax.set_adif_log(bool(logging))
 
     def set_max_lines(self, lines):
-        '''wefax.set_max_lines             : s:i   : Set maximum lines for fax image reception
+        '''Set maximum lines for fax image reception
         '''
         return self.client.wefax.set_max_lines(int(lines))
 
