@@ -40,7 +40,7 @@ Fldigi is a digital modem application that is widely used in the amateur radio c
 
 ## API Documentation
 
-* TBD
+* https://pythonhosted.org/pyfldigi/
 
 ## Useful FLDIGI documentation
 
