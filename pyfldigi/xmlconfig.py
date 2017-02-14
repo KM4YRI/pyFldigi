@@ -1,4 +1,8 @@
 '''
+
+.. TODO:: Currently, the 'save' functionality does not work.  To preserve comments and other formatting, a bit of work
+      will be needed to write a custom regex-based string subset modifier.
+
 '''
 import os
 import sys
@@ -12,7 +16,23 @@ from xml.sax.saxutils import escape
 
 class XmlConfig(object):
 
-    '''Placeholder for fldigi.prefs config read/write'''
+    '''Placeholder for fldigi.prefs config read/write
+
+      :param config_dir: The directory in which fldigi reads and writes its config files.  e.g. 'C:/Users/njansen/fldigi.files/'
+      :type config_dir: str
+      :param read_now: If True, read() is called immediately at the end of the constructor.  Otherwise, a read is not done until explicitly called.
+      :type read_now: bool
+
+    :Example:
+
+    >>> import pyfldigi
+    >>> xc = pyfldigi.XmlConfig(config_dir)
+
+    .. automethod:: __getitem__
+    .. automethod:: __setitem__
+    .. automethod:: __str__
+
+    '''
 
     def __init__(self, config_dir, read_now=True):
         # TODO: Check to make sure that the location is valid, and that the name is fldigi_def.xml
@@ -24,7 +44,16 @@ class XmlConfig(object):
             self.read()
 
     def read(self):
-        '''Open and parse the config XML file'''
+        '''Open and parse the config XML file.
+        :Example:
+
+        >>> import pyfldigi
+        >>> xc = pyfldigi.XmlConfig(config_dir, read_now=False)
+        >>> # do some other stuff
+        >>> xc.read()
+        >>> xc['baz']  # Read some random setting named 'baz'
+        42
+        '''
         self.settings = {}
         self.dirty = False
         self.tree = ElementTree.parse(self.location)
@@ -35,22 +64,74 @@ class XmlConfig(object):
             self.settings[str(child.tag).lower()] = child.text
 
     def save(self):
+        '''Save the config.  Will only write to the file if changes have been made (self.dirty is True)
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> xc = pyfldigi.XmlConfig(config_dir)
+        >>> xc['baz'] = 42
+        >>> xc.save()
+        '''
         if self.dirty is True:
             # Delete the xml-old, if present
             pass
 
     def __str__(self):
+        '''Prints out all of the settings in a manner of: '{name} : {value}\n'
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> xc = pyfldigi.XmlConfig(config_dir)
+        >>> str(xc)
+        SETTING1 : 0
+        SETTING2 : 1
+        # and so on
+        '''
         s = ''
         for key, value in self.settings.items():
             s += ('{} : {}\n'.format(key, value))
         return s
 
     def __getitem__(self, key):
+        '''Get a setting from the XML config, by its XML tag name
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> xc = pyfldigi.XmlConfig(config_dir)
+        >>> xc['XMLRIGDEVICE']
+        'COM1'
+        '''
         return self.settings[str(key).lower()]  # case insensitive
 
     def __setitem__(self, key, value):
-        # TODO: Escape strings with XML safe values
-        # TODO: Encode bool's as 1 or 0
+        '''Update a setting value.
+
+          :param key: The XML tag name
+          :type key: str
+          :param value: description
+          :type value: str, bool, int, or float.
+
+        .. note:: Settings aren't written until save() is called!
+
+        .. note:: Strings will be escaped because this is an XML file.  '<', '>', etc. will be replaced as required.
+
+        .. todo:: boolean values will be encoded as '1' or '0'
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> xc = pyfldigi.XmlConfig(config_dir)
+        >>> xc['XMLRIGDEVICE']
+        'COM1'
+        >>> xc['XMLRIGDEVICE'] = 'COM5'
+        >>> xc['XMLRIGDEVICE']
+        'COM5'
+        >>> xc.save()  # Settings aren't written until save() is called!
+        '''
+
         if isinstance(value, str):
             value = escape(value)
         elif isinstance(value, bool):
@@ -68,14 +149,30 @@ class XmlConfig(object):
     # #####################################################################################
     # Highly used items have their own methods below
 
-    def set_comport(self, comport):
-        '''Note that there are two COM ports in the config.  One for XML-RPC (flrig) and one for HamRig.
-        Set both because they're mutually exclusive.
-        XMLRIGDEVICE
-        HAMRIGDEVICE
+    def set_serial_port(self, comport):
+        '''Sets the serial port device in the config.
+
+          :param comport: The com port, e.g. 'COM1' or '/dev/ttys1'
+          :type comport: str
+
+        .. note::
+            There are two COM ports in the config (XMLRIGDEVICE and HAMRIGDEVICE).
+            One for XML-RPC (flrig) and one for HamRig.
+            Set both because they're mutually exclusive.
         '''
         self['XMLRIGDEVICE'] = str(comport)
         self['HAMRIGDEVICE'] = str(comport)
+
+    def set_sound_card(self):
+        '''
+        PORTINDEVICE is None if not defined.  Or a str (e.g. 'Microphone (USB Audio Codec)' if defined)
+        PORTININDEX is -1 if not defined.  Or the current index of the sound card (9)
+        PORTOUTDEVICE is None if not defined.  Or a str (e.g. 'Speakers (High Definition Audio to Speakers (USB Audio Codec)')
+        AUDIOIO ?? changed from 3 to 1
+        PORTOUTINDEX -1 or a valid index.
+        '''
+        pass
+
 
 
 class XmlMonitor(object):
@@ -85,10 +182,24 @@ class XmlMonitor(object):
     any changes to the console as they happen.  Make sure to press 'save settings' after
     making your setting!  The actual monitoring happens in a thread, so it is non-blocking.
 
-    Note that all changed settings are logged by default, to the configuration directory,
-    as 'XmlMonitor.log'
+    :param config_dir: The directory in which fldigi reads and writes its config files.  e.g. 'C:/Users/njansen/fldigi.files/'
+    :type config_dir: str (path to folder)
+    :param start: If True, the monitoring will start immediately.  if False, start() must be called.
+    :type start: bool
 
-    Press Ctrl-C to stop, or set a timeout before running.
+    .. note::
+        All changed settings are logged by default using the Python logger framework, to the
+        configuration directory, as 'XmlMonitor.log'
+
+    .. note:: Press Ctrl-C to stop, or set a timeout before running.
+
+    :Example:
+
+    >>> import pyfldigi
+    >>> xc = pyfldigi.XmlMonitor(config_dir)
+    2017-02-05 16:36:29,129 : XmlMonitor : Monitoring C:/Users/jeff/fldigi.files/fldigi_def.xml...
+    2017-02-05 16:36:47,252 : XmlMonitor : MYANTENNA changed from 'dipole' to 'yagi'
+    2017-02-05 16:36:51,279 : XmlMonitor : MYANTENNA changed from 'yagi' to 'magloop'
     '''
 
     def __init__(self, config_dir, start=True):
@@ -124,22 +235,18 @@ class XmlMonitor(object):
         signal.signal(signal.SIGINT, self.stop)
 
     def start(self):
-        '''Start monitoring the XML'''
+        '''Start monitoring the XML.  This launches a monitoring thread, therefore start() is non-blocking.'''
         if not self.is_running:
-            self._timer = threading.Timer(self.interval, self.threadworker)
+            self._timer = threading.Timer(self.interval, self._threadworker)
             self._timer.start()
             self.is_running = True
 
     def stop(self):
-        '''Stop monitoring the XML'''
+        '''Stop monitoring the XML.  Stops the thread.  Can be restarted with start().'''
         self._timer.cancel()
         self.is_running = False
 
-    def wait(self, timeout=None):
-        self.timeout = timeout
-        pass
-
-    def threadworker(self):
+    def _threadworker(self):
         self.is_running = False
         self.start()
         mtime = os.path.getmtime(self.location)
@@ -155,7 +262,3 @@ class XmlMonitor(object):
                     pass  # TBD
             self.settings = new
             self.mtime = mtime
-
-    def _isFileChanged(self):
-        '''tbd'''
-        return False
