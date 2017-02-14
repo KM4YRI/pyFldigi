@@ -1,14 +1,20 @@
 '''
 '''
 
+import time
+
 
 class Main(object):
 
     '''All the commands under 'fldigi.main' in the XML-RPC spec for fldigi.
+
+    .. note:: An instance of this class automatically gets created under :py:class:`pyfldigi.client.client.Client` when it is constructed.
     '''
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
+        self.mutex = clientObj.mutex
 
     @property
     def status1(self):
@@ -129,7 +135,7 @@ class Main(object):
 
     @property
     def squelch_level(self):
-        '''Returns the squelch level.  Range is 0.0 - 100.0
+        '''The squelch level.  Range is 0.0 - 100.0
 
         :getter: Returns the squelch level
         :setter: Sets the squelch state.
@@ -155,26 +161,6 @@ class Main(object):
             raise ValueError('squelch level must be between 0 and 100')
         self.client.main.set_squelch_level(float(level))
 
-    def increment_squelch_level(self, inc):
-        '''Increments the squelch level. Returns the new level
-        :type: float
-
-        :Example:
-
-        >>> import pyfldigi
-        >>> fldigi = pyfldigi.Client()
-        >>> fldigi.main.squelch_level  # read to demonstrate its initial value
-        5.0
-        >>> fldigi.main.increment_squelch_level(1.5)  # Increment by 1
-        >>> fldigi.main.squelch_level  # read back to demonstrate that it changed
-        6.5
-        >>> fldigi.main.increment_squelch_level(-1.5)  # Decrement by 1
-        >>> fldigi.main.squelch_level  # read back to demonstrate that it changed
-        5.0
-        '''
-        self.client.main.inc_squelch_level(float(inc))  # I was getting erratic return values from this function...
-        return self.squelch_level  # So request and return the level here.
-
     @property
     def reverse(self):
         '''The Reverse Sideband state (whether or not the mark and space are reversed)
@@ -187,10 +173,10 @@ class Main(object):
 
         >>> import pyfldigi
         >>> fldigi = pyfldigi.Client()
-        >>> fldigi.main.squelch  # read to demonstrate its initial value
+        >>> fldigi.main.reverse  # read to demonstrate its initial value
         True
-        >>> fldigi.main.squelch = False  # disable
-        >>> fldigi.main.squelch  # read back to demonstrate that it changed
+        >>> fldigi.main.reverse = False  # disable
+        >>> fldigi.main.reverse  # read back to demonstrate that it changed
         False
         '''
         return bool(self.client.main.get_reverse())
@@ -275,21 +261,31 @@ class Main(object):
         NOTE: sphinx ignores docstrings from setters, the documentation is above under the @property'''
         self.client.main.set_rsid(bool(value))
 
-    def get_trx_status(self):
+    def get_trx_state(self, suppress_errors=False):
         '''Returns transmit/tune/receive status
-        returns: ['tx', 'rx', 'tune'] ??
+        returns: ['TX', 'RX', 'TUNE'] ??
         '''
-        return self.client.main.get_trx_status()
-
-    def get_trx_state(self):
-        '''Returns T/R state
-        returns ['RX', 'TX']
-        '''
-        return self.client.main.get_trx_state()
+        for tries in range(0, 3):  # retry up to 3 times.
+            self.mutex.acquire()
+            try:
+                state = str(self.client.main.get_trx_status()).upper()
+            except Exception as e:
+                state = 'ERROR'
+            finally:
+                self.mutex.release()
+            if state in ['TX', 'RX', 'TUNE']:
+                break
+            time.sleep(0.005)
+        return state
 
     def rx(self):
         '''Puts fldigi into receive mode.
 
+        .. note::
+            This is the default mode that FLDIGI starts in.
+            This command is only needed when you've put it into some other mode.
+
+
         :Example:
 
         >>> import pyfldigi
@@ -298,10 +294,12 @@ class Main(object):
         >>> fldigi.delay(1000)  # wait a bit
         >>> fldigi.main.rx()  # Put flgidigi into receive mode
         '''
-        return self.client.main.rx()
+        self.client.main.rx()
 
     def tx(self):
-        '''Puts fldigi into transmit mode.
+        '''Puts fldigi into transmit mode.  This will key the PTT or VOX via CAT control.
+
+        .. note:: If you're looking to transmit a block of text, please use :py:method:`pyfldigi.client.text.Text.transmit`
 
         :Example:
 
@@ -311,10 +309,10 @@ class Main(object):
         >>> fldigi.delay(1000)  # wait a bit
         >>> fldigi.main.rx()  # Put flgidigi into receive mode
         '''
-        return self.client.main.tx()
+        self.client.main.tx()
 
     def tune(self):
-        '''Puts fldigi into tune mode.
+        '''Puts fldigi into tune mode.  I'm assuming that this allows antenna tuning via CAT/RIG control.
 
         :Example:
 
@@ -322,7 +320,7 @@ class Main(object):
         >>> fldigi = pyfldigi.Client()
         >>> fldigi.main.tune()  # Put flgidigi into tune mode
         '''
-        return self.client.main.tune()
+        self.client.main.tune()
 
     def abort(self):
         '''Aborts a transmit or tune
@@ -335,7 +333,7 @@ class Main(object):
         >>> fldigi.delay(10)  # wait a bit
         >>> fldigi.main.abort()  # abort the transmit
         '''
-        return self.client.main.abort()
+        self.client.main.abort()
 
     def run_macro(self, macroNum):
         '''Runs a macro
@@ -352,3 +350,35 @@ class Main(object):
         :rtype: int
         '''
         return self.client.main.get_max_macro_id()
+
+    def send(self, data, block=True, timeout=10):
+        # Get latest TRX Status
+        state = self.clientObj.main.get_trx_state()
+        print('send(): state={}'.format(state))
+
+        if state == 'TX':  # already chooching
+            tx_start = time.time()
+            self.clientObj.text.add_tx(data)
+        elif state == 'RX':
+            self.clientObj.text.clear_tx()
+            self.clientObj.txmonitor.history.txdata_history = []  # clear
+            tx_start = time.time()
+            self.clientObj.main.tx()
+            self.clientObj.text.add_tx(data)
+
+            # wait until the first character has been transmitted, even if non blocking
+            while(1):
+                if len(self.clientObj.txmonitor.history.txdata_history) >= 1:
+                    break
+                if time.time() - tx_start >= timeout:
+                    raise TimeoutError('Timeout while transmitting, waiting for first byte to go out')
+        else:
+            raise Exception('cannot transmit if FLDIGI state is \'{}\''.format(state))
+
+        if block is True:
+            while(1):
+                if self.clientObj.txmonitor.transmitting is False:
+                    print('Returning from blocking call to send()...')
+                    break
+                if time.time() - tx_start >= timeout:
+                    raise TimeoutError('Timeout while transmitting, waiting for text to be transmitted')

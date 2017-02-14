@@ -5,11 +5,15 @@
 class Flmsg(object):
 
     '''All of the commands related to flmsg in the XML-RPC spec for fldigi.
-    Note that these commands are under the 'main' section but they're put here for organizational purposes.
+
+    .. note:: These commands are under the 'main' section in the XML-RPC spec but they're put here for organizational purposes.
+
+    .. note:: An instance of this class automatically gets created under :py:class:`pyfldigi.client.client.Client` when it is constructed.
     '''
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     @property
     def online(self):

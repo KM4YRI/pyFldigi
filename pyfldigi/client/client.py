@@ -4,13 +4,14 @@
 
 import time
 import logging
+import threading
 import xmlrpc.client
+from .txmonitor import TxMonitor
 from .main import Main
 from .modem import Modem
 from .rig import Rig
 from .log import Log
-from .inputbuff import Inputbuff
-from .outputbuff import Outputbuff
+from .text import Text
 from .ioconfig import Io
 from .flmsg import Flmsg
 from .pskreporter import Spot
@@ -21,9 +22,24 @@ class Client(object):
     '''A client that can read/write settings to FLDIGI via XML-RPC protocol
 
     `Official FLDIGI XML-RPC Protocol Documentation page <http://www.w1hkj.com/FldigiHelp-3.21/html/xmlrpc_control_page.html/>`_
+
+    .. note::
+        Instances of the following classes will be instantiated and added as properties to the Client() object:
+
+        * :py:class:`pyfldigi.client.modem.Modem` as 'modem'
+        * :py:class:`pyfldigi.client.main.Main` as 'main'
+        * :py:class:`pyfldigi.client.rig.Rig` as 'rig'
+        * :py:class:`pyfldigi.client.log.Log` as 'log'
+        * :py:class:`pyfldigi.client.text.Text` as 'text'
+        * :py:class:`pyfldigi.client.pskreporter.Spot` as 'spot'
+        * :py:class:`pyfldigi.client.flmsg.Flmsg` as 'flmsg'
+        * :py:class:`pyfldigi.client.ioconfig.Io` as 'io'
+
+        The purpose of pigeon-holing the functions into classes is to provide a convenient namespace, similar to
+        the XML-RPC function names.  I've taken a bit of artistic liberty with naming and grouping!
     '''
 
-    def __init__(self, hostname='127.0.0.1', port=7362):
+    def __init__(self, hostname='127.0.0.1', port=7362, reset=True):
         '''Client() constructor
 
         :param hostname: IP address of the xml-rpc FLDIGI interface (usually 127.0.0.1)
@@ -43,16 +59,17 @@ class Client(object):
         self.ip_address = hostname
         self.port = port
         self.logger.debug('Attempting to connect to connect to fldigi at IP address={}, port={}, via XMP-RPC'.format(self.ip_address, self.port))
-        self.client = xmlrpc.client.ServerProxy('http://{}:{}/'.format(self.ip_address, self.port))
-        self.main = Main(self.client)
-        self.modem = Modem(self.client)
-        self.rig = Rig(self.client)
-        self.log = Log(self.client)
-        self.rx = Inputbuff(self.client)
-        self.tx = Outputbuff(self.client)
-        self.spot = Spot(self.client)
-        self.flmsg = Flmsg(self.client)
-        self.io = Io(self.client)
+        self.client = xmlrpc.client.ServerProxy('http://{}:{}/'.format(self.ip_address, self.port), use_builtin_types=True, allow_none=True)
+        self.mutex = threading.Lock()  # Mutex for xml-rpc client.  Guard all calls with this.
+        self.txmonitor = TxMonitor(clientObj=self)
+        self.main = Main(clientObj=self)
+        self.modem = Modem(clientObj=self)
+        self.rig = Rig(clientObj=self)
+        self.log = Log(clientObj=self)
+        self.text = Text(clientObj=self)
+        self.spot = Spot(clientObj=self)
+        self.flmsg = Flmsg(clientObj=self)
+        self.io = Io(clientObj=self)
 
     @property
     def methods(self):
@@ -149,38 +166,3 @@ class Client(object):
         >>> fldigi.delay(100)  # 100 millisecond delay
         '''
         time.sleep(int(milliseconds / 1000.0))
-
-    def send(self, text):
-        '''Blocking call to transmit a given block of text using the current modem
-
-        TBD
-        '''
-        self.clear()
-        self.client.text.add_tx(str(text))
-        self.client.main.tx()  # set transmit
-        while(1):
-            status = self.client.main.get_trx_status()
-            print(status)
-            if status == 'rx':
-                break
-            print(self.get_tx_data())
-            time.sleep(.1)
-        # wait until all words have transmitted
-        self.client.main.rx()  # set receive
-
-    def abort(self):
-        '''Aborts a transmit or tune
-
-        :Example:
-
-        >>> import pyfldigi
-        >>> fldigi = pyfldigi.Client()
-        >>> fldigi.main.tune()
-        >>> fldigi.delay(60)
-        >>> fldigi.abort()  # abort the previous commanded tune
-        '''
-        return self.client.main.abort()
-
-    def receive(self, ):
-        '''TBD'''
-        pass

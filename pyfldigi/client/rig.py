@@ -5,10 +5,13 @@
 class Rig(object):
 
     '''Rig (CAT) control via flrig, hamlib, RigCAT, RTS/DTR, or GPIO
+
+    .. note:: An instance of this class automatically gets created under fldigi.Client() when it is constructed.
     '''
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     @property
     def name(self):

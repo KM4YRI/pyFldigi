@@ -7,13 +7,16 @@ class Modem(object):
     '''A collection of methods and properties that interface to fldigi's modem functionality.
     For full documentation on the various modems available, see:
     http://www.w1hkj.com/FldigiHelp-3.21/html/modems_page.html
+
+    .. note:: An instance of this class automatically gets created under :py:class:`pyfldigi.client.client.Client` when it is constructed.
     '''
 
-    def __init__(self, client):
-        self.client = client
-        self.olivia = Olivia(client)
-        self.wefax = Wefax(client)
-        self.navtex = Navtex(client)
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
+        self.olivia = Olivia(clientObj)
+        self.wefax = Wefax(clientObj)
+        self.navtex = Navtex(clientObj)
 
     @property
     def name(self):
@@ -154,41 +157,21 @@ class Modem(object):
         '''
         self.client.modem.set_carrier(int(freq))
 
-    def increment_carrier(self, inc):
-        '''Increments the modem carrier frequency by the value passed.
-
-        :param inc: The amount to increment, in Hz.
-        :type inc: int
-        :returns: The new modem carrier frequency, in Hz
-        :rtype: int
-
-        :Example:
-
-        >>> import pyfldigi
-        >>> fldigi = pyfldigi.Client()
-        >>> fldigi.modem.carrier
-        1000
-        >>> fldigi.modem.increment_carrier(20)
-        1020
-        '''
-        return self.client.modem.inc_carrier(int(inc))
-
     @property
     def afc_search_range(self):
-        '''Returns the modem AFC [auto frequency control] search range
+        '''The modem AFC [auto frequency control] search range
+
+        :getter: Returns the modem AFC [auto frequency control] search range
+        :setter: Sets the modem AFC [auto frequency control] search range.
+        :type: int
         '''
         return self.client.modem.get_afc_search_range()
 
     @afc_search_range.setter
     def afc_search_range(self, range):
         '''Sets the modem AFC [auto frequency control] search range.
-        '''
+        NOTE: sphinx ignores docstrings from setters, the documentation is above under the @property'''
         self.client.modem.set_afc_search_range(int(range))
-
-    def increment_afc_search_range(self, inc):
-        '''Increments the modem AFC [auto frequency control] search range. Returns the new value
-        '''
-        return self.client.modem.inc_afc_search_range(int(inc))
 
     @property
     def bandwidth(self):
@@ -214,25 +197,6 @@ class Modem(object):
         '''Sets the modem bandwidth.
         NOTE: sphinx ignores docstrings from setters, the documentation is above under the @property'''
         self.client.modem.set_bandwidth(int(bandwidth))
-
-    def increment_bandwidth(self, inc):
-        '''Increments the modem bandwidth. Returns the new value
-
-        :param inc: The amount to increment, in Hz.
-        :type inc: int
-        :returns: The new bandwidth
-        :rtype: int
-
-        :Example:
-
-        >>> import pyfldigi
-        >>> fldigi = pyfldigi.Client()
-        >>> fldigi.modem.bandwidth
-        1000
-        >>> fldigi.modem.increment_bandwidth(20)
-        1020
-        '''
-        return self.client.modem.inc_bandwidth(int(inc))
 
     @property
     def quality(self):
@@ -275,8 +239,15 @@ class Modem(object):
 
 class Olivia(object):
 
-    def __init__(self, client):
-        self.client = client
+    '''Settings specific to the Olivia modem type.
+
+    .. note:: An instance of this class automatically gets created under :py:class:`pyfldigi.client.modem.Modem` when it is constructed.
+
+    '''
+
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     @property
     def bandwidth(self):
@@ -341,8 +312,9 @@ class Olivia(object):
 
 class Wefax(object):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     def get_engine_state(self):
         '''Returns Wefax engine state (tx and rx) for information.
@@ -400,8 +372,9 @@ class Wefax(object):
 
 class Navtex(object):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     def get_msg(self, timeout):
         '''Returns next Navtex/SitorB message with a max delay in seconds.. Empty string if timeout.

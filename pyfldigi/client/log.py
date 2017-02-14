@@ -4,8 +4,13 @@
 
 class Log(object):
 
-    def __init__(self, client):
-        self.client = client
+    '''
+    .. note:: An instance of this class automatically gets created under :py:class:`pyfldigi.client.client.Client` when it is constructed.
+    '''
+
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     # def get_frequency(self):
     #     '''log.get_frequency   s:n Returns the Frequency field contents'''

@@ -7,10 +7,13 @@ class Spot(object):
 
     '''PSK Reporter spotter.
     All the commands under 'fldigi.spot' in the XML-RPC spec for fldigi.
+
+    .. note:: An instance of this class automatically gets created under fldigi.Client() when it is constructed.
     '''
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, clientObj):
+        self.clientObj = clientObj
+        self.client = clientObj.client
 
     @property
     def auto(self):
