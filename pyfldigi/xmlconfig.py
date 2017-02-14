@@ -28,9 +28,9 @@ class XmlConfig(object):
     >>> import pyfldigi
     >>> xc = pyfldigi.XmlConfig(config_dir)
 
-    .. automethod:: __getitem__
-    .. automethod:: __setitem__
-    .. automethod:: __str__
+    .. automethod:: pyfldigi.xmlconfig.XmlConfig.__getitem__
+    .. automethod:: pyfldigi.xmlconfig.XmlConfig.__setitem__
+    .. automethod:: pyfldigi.xmlconfig.XmlConfig.__str__
 
     '''
 
