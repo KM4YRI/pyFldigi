@@ -299,7 +299,7 @@ class Main(object):
     def tx(self):
         '''Puts fldigi into transmit mode.  This will key the PTT or VOX via CAT control.
 
-        .. note:: If you're looking to transmit a block of text, please use :py:method:`pyfldigi.client.text.Text.transmit`
+        .. note:: If you're looking to transmit a block of text, please use :py:method:`pyfldigi.client.main.send`
 
         :Example:
 
@@ -352,7 +352,29 @@ class Main(object):
         return self.client.main.get_max_macro_id()
 
     def send(self, data, block=True, timeout=10):
-        # Get latest TRX Status
+        '''This is the preferred way of sending a block of text.
+
+        :param data: The text or data to encode and transmit
+        :type data: str or bytes
+        :param block: if True, the function blocks until all data has been transmitted.  If False, this method returns immediately while the radio transmits.
+        :type block: bool
+        :param timeout: The # of seconds to wait before returning a TimeoutError
+        :type timeout: float or int
+
+        .. warning::
+            FLDIGI does NOT turn the transmit off after the text is done transmitting.
+            This library does, however contain a background thread that monitors the TX state and sets it to 'RX' whenever
+            the TX data is finished being sent.  HOWEVER if Python crashes, exits, etc, FLDIGI may be left in transmit
+            mode.  Please use precaution and always run any code that uses this library while supervised.  A stuck transmit
+            is a bad condition for many, many reasons.
+
+        :example:
+
+        >>> import pyfldigi
+        >>> c = pyfldigi.Client()
+        >>> # Make sure to set up the modem and rig settings here!!!
+        >>> c.main.send('Lorem ipsum dolor sit amet', timeout=50)
+        '''
         state = self.clientObj.main.get_trx_state()
         print('send(): state={}'.format(state))
 
