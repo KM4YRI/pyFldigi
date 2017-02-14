@@ -6,6 +6,7 @@ https://github.com/pypa/sampleproject
 '''
 
 from setuptools import setup
+from setuptools import find_packages
 from os import path
 
 here = path.abspath(path.dirname(__file__))
@@ -42,6 +43,6 @@ setup(name='pyfldigi',
                    'Programming Language :: Python :: 3.6',
                    'Topic :: Communications :: Ham Radio'],
       keywords='fldigi ham radio hf digital cw morse rtty olivia psk ssb sdr',
-      packages=['pyfldigi', 'tests'],
+      packages=find_packages(),
       install_requires=[],
       zip_safe=False)
