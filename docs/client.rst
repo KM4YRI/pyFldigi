@@ -1,41 +1,21 @@
-
-
-client : The FLDIGI XML-RPC client
-==================================
-
-.. automodule:: pyfldigi.client.client
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pyfldigi.client.inputbuff module
---------------------------------
-
-.. automodule:: pyfldigi.client.inputbuff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pyfldigi.client.outputbuff module
----------------------------------
-
-.. automodule:: pyfldigi.client.outputbuff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Other
---------------------
+Client : Communicate with FLDIGI via XML-RPC
+============================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Table of Contents:
+   :caption: Namespaced XML-RPC Commands:
 
    main.rst
    modem.rst
    rig.rst
    flmsg.rst
+   text.rst
    ioconfig.rst
    pskreporter.rst
    log.rst
+   xml-rpc.rst
+
+.. automodule:: pyfldigi.client.client
+    :members:
+    :undoc-members:
+    :show-inheritance:

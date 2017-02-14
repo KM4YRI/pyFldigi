@@ -12,7 +12,7 @@ Welcome to pyFldigi's documentation!
 
    appmonitor.rst
    client.rst
-   config.rst
+   xmlconfig.rst
 
 Summary / Context
 -----------------

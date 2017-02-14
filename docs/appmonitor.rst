@@ -1,4 +1,4 @@
-appmonitor : Start and stop the FLDIGI application
+AppMonitor : Start and stop the FLDIGI application
 --------------------------------------------------
 
 .. automodule:: pyfldigi.appmonitor
