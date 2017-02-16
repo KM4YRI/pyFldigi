@@ -12,11 +12,14 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+try:
+    with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+        long_description = f.read()
+except:
+    long_description = ''
 
 setup(name='pyfldigi',
-      version='0.3',
+      version='0.4',
       description='Python library to control FLDIGI via XML-RPC',
       long_description=long_description,
       url='https://github.com/KM4YRI/pyFldigi',
@@ -44,5 +47,5 @@ setup(name='pyfldigi',
                    'Topic :: Communications :: Ham Radio'],
       keywords='fldigi ham radio hf digital cw morse rtty olivia psk ssb sdr',
       packages=find_packages(),
-      install_requires=[],
+      install_requires=['requests'],
       zip_safe=False)
