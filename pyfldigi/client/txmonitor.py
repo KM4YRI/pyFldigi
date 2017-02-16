@@ -44,7 +44,7 @@ class _State(object):
             end_time = time.time()
         else:
             end_time = self.end_time
-        return '\'{}\' for {:.3f}s (from {:.3f} to {:.3f})'.format(self.state, self.start_time - end_time, self.start_time, end_time)
+        return '\'{}\' for {:.3f}s (from {:.3f} to {:.3f})'.format(self.state, self.duration, self.start_time, end_time)
 
 
 class _TxData(object):
@@ -68,6 +68,7 @@ class _TxData(object):
 class _History(object):
 
     def __init__(self, initialState='RX', max_history=900):
+        self.logger = logging.getLogger('pyfldigi.client._History')
         self.max_history = max_history
         self.state_history = [_State(initialState)]  # Start the history with the initial state
         self.txdata_history = []
@@ -83,11 +84,21 @@ class _History(object):
 
     def chop(self):
         t = time.time() - self.max_history
-        if self.state_history[0].end_time <= t:
-            self.state_history = [i for i in self.state_history if (i.end_time >= t)]
+        if len(self.txdata_history) > 0:
+            if self.state_history[0].end_time is not None:
+                if self.state_history[0].end_time <= t:
+                    h = []
+                    for i in self.state_history:
+                        if i.end_time is not None:
+                            if i.end_time >= t:
+                                h.append(i)
+                        else:
+                            h.append(i)
+                    self.state_history = h
+                    # self.state_history = [i for i in self.state_history if (i.end_time >= t)]
 
         if len(self.txdata_history) > 0:
-            if self.txdata_history[0] <= t:
+            if self.txdata_history[0].time <= t:
                 self.txdata_history = [i for i in self.txdata_history if (i.time >= t)]
 
     def update_state(self, new_state):
@@ -95,7 +106,7 @@ class _History(object):
             raise TypeError('expected state type to be _State but got {}'.format(type(new_state)))
         last_state = self.state_history[-1].state
         if new_state.state != last_state:
-            print('STATE CHANGE to {}'.format(new_state.state))
+            self.logger.info('STATE CHANGE to {}'.format(new_state.state))
             self.state_history[-1].end()
             self.state_history.append(new_state)
             self.chop()
@@ -131,9 +142,9 @@ class TxMonitor(threading.Thread):
 
     def __init__(self, clientObj):
         super().__init__()
+        self.logger = logging.getLogger('pyfldigi.client.txmonitor')
         self.clientObj = clientObj
         self.client = clientObj.client
-        self.mutex = clientObj.mutex
 
         # Modal properties
         self.interval = 1  # Default interval is 1 second
@@ -152,7 +163,7 @@ class TxMonitor(threading.Thread):
         self.start()
 
     def run(self):
-        print('TXMONITOR: Thread started.')
+        self.logger.debug('TXMONITOR: Thread started.')
         while(1):
             try:
                 # Get TRX Status
@@ -164,7 +175,7 @@ class TxMonitor(threading.Thread):
                 data = self.clientObj.text.get_tx_data(suppress_errors=True)
                 if data is not None:
                     if len(data) > 0:
-                        print('TXMONITOR: TX DATA: {}'.format(data))
+                        self.logger.debug('TXMONITOR: TX DATA: {}'.format(data))
                         self.history.append_txdata(_TxData(data))
 
                 if state == 'TX':
@@ -174,14 +185,14 @@ class TxMonitor(threading.Thread):
                     if t is None:
                         self.transmitting = True
                     else:
-                        print('txdata_time = {}'.format(t))
                         if t <= self.xmit_timeout:
                             # bytes are still being transmitted
                             self.transmitting = True
                         else:
+                            self.clientObj.main.rx()  # put the state back into receive
                             self.transmitting = False
-                            print('Changing state back to RX...')
-                            self.client.main.rx()  # put the state back into receive
+                            # print('txdata_time = {}'.format(t))
+                            self.logger.info('Changing state back to RX... (last transmitted byte was {} seconds ago'.format(t))
                 elif state == 'ERROR':
                     break
                 else:
@@ -189,16 +200,15 @@ class TxMonitor(threading.Thread):
                     self.transmitting = False
 
             except Exception as e:
+                raise
+                print('TXMONITOR: Exception: {}'.format(e))
                 pass  # Daemon threads might run after python starts shutting down.  Ignore errors.
             self.heartbeat = time.time()
             time.sleep(self.interval)
-        print('TXMONITOR: Thread stopped.')
+        self.logger.debug('TXMONITOR: Thread stopped.')
 
     def get_state(self):
         return self.history.get_state()
-
-    # def get_txdata(self, ):
-    #     pass
 
     def get_last_txdata_time(self):
         return self.history.get_last_txdata_time()

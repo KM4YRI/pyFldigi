@@ -2,6 +2,7 @@
 '''
 
 import time
+import logging
 
 
 class Main(object):
@@ -14,7 +15,7 @@ class Main(object):
     def __init__(self, clientObj):
         self.clientObj = clientObj
         self.client = clientObj.client
-        self.mutex = clientObj.mutex
+        self.logger = logging.getLogger('pyfldigi.client.main')
 
     @property
     def status1(self):
@@ -263,16 +264,33 @@ class Main(object):
 
     def get_trx_state(self, suppress_errors=False):
         '''Returns transmit/tune/receive status
-        returns: ['TX', 'RX', 'TUNE'] ??
+
+        :param suppress_errors: if True, no exception will be raised if the xml-rpc request fails.
+        :type suppress_errors: bool
+
+        :returns:
+            * 'TX' if FLDIGI is transmitting
+            * 'RX' if FLDIGI is receiving
+            * 'TUNE' if FLDIGI is tuning (rig antenna tuning in progress, etc)
+            * 'ERROR' if state isn't one of the above, or an exception occured
+        :rtype: str
+
+        :Example:
+
+        >>> import pyfldigi
+        >>> fldigi = pyfldigi.Client()
+        >>> fldigi.get_trx_state()
+        'RX'
         '''
         for tries in range(0, 3):  # retry up to 3 times.
-            self.mutex.acquire()
             try:
                 state = str(self.client.main.get_trx_status()).upper()
             except Exception as e:
-                state = 'ERROR'
-            finally:
-                self.mutex.release()
+                if suppress_errors is False:
+                    raise
+                else:
+                    print('Exception @ get_trx_state() : {}'.format(e))
+                    state = 'ERROR'
             if state in ['TX', 'RX', 'TUNE']:
                 break
             time.sleep(0.005)
@@ -294,6 +312,7 @@ class Main(object):
         >>> fldigi.delay(1000)  # wait a bit
         >>> fldigi.main.rx()  # Put flgidigi into receive mode
         '''
+        self.logger.debug('Setting FLDIGI to RX mode')
         self.client.main.rx()
 
     def tx(self):
@@ -309,6 +328,7 @@ class Main(object):
         >>> fldigi.delay(1000)  # wait a bit
         >>> fldigi.main.rx()  # Put flgidigi into receive mode
         '''
+        self.logger.debug('Setting FLDIGI to TX mode')
         self.client.main.tx()
 
     def tune(self):
@@ -320,6 +340,7 @@ class Main(object):
         >>> fldigi = pyfldigi.Client()
         >>> fldigi.main.tune()  # Put flgidigi into tune mode
         '''
+        self.logger.debug('Setting FLDIGI to TUNE mode')
         self.client.main.tune()
 
     def abort(self):
@@ -376,7 +397,7 @@ class Main(object):
         >>> c.main.send('Lorem ipsum dolor sit amet', timeout=50)
         '''
         state = self.clientObj.main.get_trx_state()
-        print('send(): state={}'.format(state))
+        self.logger.debug('send(): state={}'.format(state))
 
         if state == 'TX':  # already chooching
             tx_start = time.time()
@@ -400,7 +421,7 @@ class Main(object):
         if block is True:
             while(1):
                 if self.clientObj.txmonitor.transmitting is False:
-                    print('Returning from blocking call to send()...')
+                    self.logger.debug('Returning from blocking call to send()...')
                     break
                 if time.time() - tx_start >= timeout:
                     raise TimeoutError('Timeout while transmitting, waiting for text to be transmitted')
