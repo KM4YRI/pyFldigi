@@ -2,6 +2,7 @@ import time
 import pyfldigi
 
 c = pyfldigi.Client()
+c.startLogger()
 time.sleep(1)
 c.main.send('SOS')
 time.sleep(2)
